@@ -288,7 +288,6 @@ def main():
                 発動条件が満たされたら，NeoBeamクラスのイニシャライザにこうかとんとビーム数を渡し，戻り値のリストをBeamグループに追加する
                 """
                 if key_lst[pg.K_LSHIFT] == True:
-                    print("K_LSHIFT")
                     beams.add(NeoBeam(bird, 5).gen_beams())
                 else:
                     beams.add(Beam(bird ,0))
