@@ -72,6 +72,8 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+        self.state = "normal"  # 無敵状態かどうかを示す
+        self.hyper_life = -1   # 無敵状態の残り時間
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -99,6 +101,11 @@ class Bird(pg.sprite.Sprite):
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image)    # 無敵状態の画像
+            self.hyper_life -= 1    # 無敵状態の残り時間を1フレーム分減少
+            if self.hyper_life < 0:   # 無敵状態の時間が0未満になったかチェック
+                self.state = "normal"    # 状態を通常状態に戻す
         screen.blit(self.image, self.rect)
 
 
@@ -263,6 +270,11 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT:    #右Shiftキーが押された
+                if score.value > 100 and bird.state == "normal":   # # スコア100以上と通常状態か確認
+                    bird.state = "hyper"        # 無敵状態に移行
+                    bird.hyper_life = 500       # 無敵状態の持続時間
+                    score.value -= 100           # スコアを100消費
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -283,11 +295,15 @@ def main():
             score.value += 1  # 1点アップ
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            if bird.state == "hyper":  # 無敵状態の場合
+                exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+                score.value += 1  # スコア1点追加
+            else:  # 通常状態の場合
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         bird.update(key_lst, screen)
         beams.update()
