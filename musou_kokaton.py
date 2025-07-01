@@ -407,11 +407,6 @@ def main():
                 pg.display.update()
                 time.sleep(2)
                 return
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
         
         
         for shield in pg.sprite.groupcollide(shields, bombs , True , True):  # 爆弾と衝突した防御壁リスト
