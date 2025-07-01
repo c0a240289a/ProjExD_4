@@ -269,7 +269,8 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 100 #初期値
+        self.value = 10000 #初期値
+
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -277,6 +278,34 @@ class Score:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
+
+
+class Shield(pg.sprite.Sprite):
+    """
+    追加機能5:防御壁を出現させ、着弾を防ぐ
+    """
+    def __init__(self, bird: Bird, life=400):
+        super().__init__()
+        self.bird = bird
+        self.life = life
+        self.image = pg.Surface((20, bird.rect.height * 2))  # 幅と高さの設定
+        pg.draw.rect(self.image, (0, 0, 255),pg.Rect(0, 0, 20, bird.rect.height * 2))  # 防御壁の設定
+
+        self.vx, self.vy = self.bird.dire  # 向き
+        angle = math.degrees(math.atan2(-self.vy, self.vx))  # 角度の設定
+        self.image = pg.transform.rotozoom(self.image, angle, 1.0)  # 回転
+        self.rect = self.image.get_rect()
+        tejun6 = pg.Vector2(self.vx, self.vy) * self.bird.rect.width
+        self.rect.center = self.bird.rect.center + tejun6
+
+        self.image.set_colorkey((0, 0, 0))
+        self.image = self.image.copy()
+
+
+    def update(self):
+        self.life -= 1
+        if self.life <= 0:
+            self.kill()
 
 
 def main():
@@ -290,6 +319,8 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    shields = pg.sprite.Group()
+    print(type(shields))
 
     tmr = 0
     clock = pg.time.Clock()
@@ -310,6 +341,10 @@ def main():
                     bird.state = "hyper"        # 無敵状態に移行
                     bird.hyper_life = 500       # 無敵状態の持続時間
                     score.value -= 100           # スコアを100消費
+            if event.type == pg.KEYDOWN and event.key == pg.K_s and score.value > 50 and len(shields) == 0:  # sキーを押す かつ スコアより50大 かつ 防御壁が一つもないとき
+                shield = Shield(bird)
+                shields.add(shield)
+                score.value -= 50
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -341,6 +376,15 @@ def main():
                 pg.display.update()
                 time.sleep(2)
                 return
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+        
+        for shield in pg.sprite.groupcollide(shields, bombs , True , True):  # 爆弾と衝突した防御壁リスト
+            exps.add(Explosion(shield, 50))  # 爆発エフェクト
+
 
         bird.update(key_lst, screen)
         beams.update()
@@ -352,6 +396,10 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+ 
+
+        shields.update()
+        shields.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
