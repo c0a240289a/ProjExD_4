@@ -382,6 +382,7 @@ def main():
             time.sleep(2)
             return
         
+        
         for shield in pg.sprite.groupcollide(shields, bombs , True , True):  # 爆弾と衝突した防御壁リスト
             exps.add(Explosion(shield, 50))  # 爆発エフェクト
 
