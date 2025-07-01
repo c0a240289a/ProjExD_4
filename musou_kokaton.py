@@ -141,7 +141,10 @@ class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    """
+    • Beamクラスのイニシャライザの引数に回転角度angle0（デフォルトで0）を追加し，ビームの回転角度に加算する
+    """
+    def __init__(self, bird: Bird,angle0):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん
@@ -149,9 +152,10 @@ class Beam(pg.sprite.Sprite):
         super().__init__()
         self.vx, self.vy = bird.dire
         angle = math.degrees(math.atan2(-self.vy, self.vx))
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
-        self.vx = math.cos(math.radians(angle))
-        self.vy = -math.sin(math.radians(angle))
+        self.angle0 = angle0
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle+self.angle0, 1.0)
+        self.vx = math.cos(math.radians(angle+self.angle0))
+        self.vy = -math.sin(math.radians(angle+self.angle0))
         self.rect = self.image.get_rect()
         self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
         self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
@@ -167,6 +171,24 @@ class Beam(pg.sprite.Sprite):
             self.kill()
 
 
+class NeoBeam:
+    """
+    NeoBeamクラスのイニシャライザの引数を，こうかとんbirdとビーム数numとする
+
+    """
+    def __init__(self, bird: Bird,num):
+        self.beams= []
+        self.beamnum=num
+        self.bird =bird
+
+    def gen_beams(self):
+        """
+        NeoBeamクラスのgen_beamsメソッドで，‐50°～+51°の角度の範囲で指定ビーム数の分だけBeamインスタンスを生成し，リストにappendする → リストを返す
+        """
+        for i in range(-50, +51, int(100/(self.beamnum-1))):
+            beam = Beam(self.bird,i)
+            self.beams.append(beam)
+        return self.beams
 class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
@@ -262,7 +284,14 @@ def main():
             if event.type == pg.QUIT:
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+                """
+                発動条件が満たされたら，NeoBeamクラスのイニシャライザにこうかとんとビーム数を渡し，戻り値のリストをBeamグループに追加する
+                """
+                if key_lst[pg.K_LSHIFT] == True:
+                    print("K_LSHIFT")
+                    beams.add(NeoBeam(bird, 5).gen_beams())
+                else:
+                    beams.add(Beam(bird ,0))
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
